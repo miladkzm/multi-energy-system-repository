@@ -1019,9 +1019,3 @@ def make_app_model(app_name: str, household_data: HouseholdData, household_model
     for app_model_class_name, app_model_class in app_model_classes:
         if app_type == app_model_class.app_type:
             app_model_class(household_data, household_model)
-
-    # # Raise error, if no DER model class found for given `app_type`.
-    # raise ValueError(
-    #     f"Can't find App model class for App '{app_name}' of type '{app_type}'. "
-    #     f"Please check if valid `app_type` is defined."
-    # )
