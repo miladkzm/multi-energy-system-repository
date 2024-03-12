@@ -75,13 +75,13 @@ class HouseholdData(ObjectBase):
         time_series_data_csv.index.freq = '15T'
         appliance_data = pd.read_csv(data_path['appliance_data'], index_col=[0, 1], skipinitialspace=True)
         self.app_data = appliance_data
-        heat_pump_data = pd.read_csv(data_path['heat_pump_data'], index_col=[0], skipinitialspace=True)
-        heat_pump_data.index = pd.to_datetime(heat_pump_data.index).tz_localize(None)
-        heat_pump_data = heat_pump_data.resample('15T').asfreq()
-        heat_pump_data.drop(heat_pump_data.index[-1], inplace=True)
-        time_series_data_csv.index = heat_pump_data.index
-        self.outdoor_temperature = heat_pump_data['T_od']
-        self.room_temperature_sp = heat_pump_data['T_room_sp']
+        # heat_pump_data = pd.read_csv(data_path['heat_pump_data'], index_col=[0], skipinitialspace=True)
+        # heat_pump_data.index = pd.to_datetime(heat_pump_data.index).tz_localize(None)
+        # heat_pump_data = heat_pump_data.resample('15T').asfreq()
+        # heat_pump_data.drop(heat_pump_data.index[-1], inplace=True)
+        # time_series_data_csv.index = heat_pump_data.index
+        # self.outdoor_temperature = heat_pump_data['T_od']
+        # self.room_temperature_sp = heat_pump_data['T_room_sp']
         self.domestic_hot_water_temperature_sp = 55
         self.solar_irradiance = time_series_data_csv['solar_irradiance']
         self.wind_speed = time_series_data_csv['wind_speed']

@@ -1000,22 +1000,21 @@ def make_app_models(
 
     for app_name in app_names:
         if household_data.app_data.loc[(app_name, 'operating'), 'value'] == 1 and model_flags[app_name] == True:
-            # app_models[app_name] = make_app_model(app_name, household_data, household_model)
             make_app_model(app_name, household_data, household_model)
 
 
 def make_app_model(app_name: str, household_data: HouseholdData, household_model: HouseModel):
-    """Factory method for DER models, makes appropriate DER model type for given `der_name`."""
+    """Factory method for App models, makes appropriate App model type for given `app_name`."""
 
-    # Obtain DER type.
+    # Obtain App type.
     app_type = app_name
 
-    # Obtain DER model classes.
+    # Obtain App model classes.
     app_model_classes = inspect.getmembers(
         sys.modules[__name__], lambda cls: inspect.isclass(cls) and issubclass(cls, AppModel)
     )
 
-    # Obtain DER model for given `app_type`.
+    # Obtain App model for given `app_type`.
     for app_model_class_name, app_model_class in app_model_classes:
         if app_type == app_model_class.app_type:
             app_model_class(household_data, household_model)
