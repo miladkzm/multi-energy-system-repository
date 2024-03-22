@@ -1,5 +1,3 @@
-from pyparsing import col
-
 from matplotlib_setting import set_figure_art
 import numpy as np
 import pandas as pd

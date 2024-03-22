@@ -33,8 +33,8 @@ if __name__ == '__main__':
     model_flag = set_model_flag()
 
     data_path = {
-        'time_series': '../data/sest_uc/household_time_series_data.csv',
-        'appliance_data': '../data/sest_uc/house_hold_appliance_data.csv',
+        'time_series': '../data/household_time_series_data.csv',
+        'appliance_data': '../data/house_hold_appliance_data.csv',
     }
     household_data = HouseholdData(data_path)
     # (model, model_variables, model_variables_with_phase) = det_HEMS_model_fun(household_data, model_flag=model_flag)
@@ -62,10 +62,6 @@ if __name__ == '__main__':
         # extract the results for the most preferred solution:
         most_preferred_solution_results = moop.unique_pareto_sols[most_preferred_solution_key]
 
-        # print('Pay-off table', moop.model.payoff)  # this prints the payoff table
-        # print('Unique pareto solutions',
-        #       np.array(list(moop.unique_pareto_sols.keys())))  # this prints the unique Pareto optimal solutions
-
         fig, axs = plt.subplots(1, figsize=[4, 1.5])
         co2 = np.array(list(moop.unique_pareto_sols.keys()))[:, 1]
         cost = np.array(list(moop.unique_pareto_sols.keys()))[:, 0]
@@ -76,7 +72,6 @@ if __name__ == '__main__':
                 axs.annotate(chr(65 + i) + '=' + str(most_preferred_solution_rounded[::-1]),
                              (co2[i], cost[i] * 1.04), fontsize=7, fontweight='bold', color='red',
                              ha='left', va='center')
-                # axs.annotate('=' + str(most_preferred_solution_rounded), (cost[i] + 0.04, co2[i] + 0.08), fontsize=8, color='red', ha='center', va='center')
             else:
                 axs.annotate(chr(65 + i), (co2[i], cost[i] * 1.04), fontsize=7, fontweight='bold', color='black',
                              ha='center', va='center')
@@ -92,13 +87,12 @@ if __name__ == '__main__':
         fig.show()
         # fig.savefig(f'hems_results/Pareto.pdf')
     else:
-        app_model.solve_model(multi_objective=multi_objective)
+        app_model.solve_model()
         model = app_model.house_model_defined.model
         most_preferred_solution_results = dict()
 
     electicity_consumption_list = {
         'NFEL': 'inflexible_power_demand',
-        # 'FEL': 'p_flex',
         'EV': 'ev_power_charged',
         'BESS': 'storage_charging_power',
         'TSEL': 'tsl_power_consumption',
@@ -110,21 +104,11 @@ if __name__ == '__main__':
     )
     electricity_consumption.index = electricity_consumption.index.strftime('%Y-%m-%d %H:%M:%S')
 
-    # flexible_electric_load_comparison_list = {
-    #     'NFEL': 'inflexible_power_demand',
-    #     'FEL': 'p_flex',
-    # }
-    # flexible_electric_load_comparison = pd.DataFrame(
-    #     {i: most_preferred_solution_results[v] if v in most_preferred_solution_results.keys()
-    #         else getattr(model, v).extract_values() for i, v in flexible_electric_load_comparison_list.items()}
-    # )
-
     electricity_generation_used_list = {
         'p_import': 'electric_power_imported',
         'PV': 'pv_power_domestic_use',
         'EV': 'ev_domestic_power_used',
         'BESS': 'storage_domestic_power_used',
-        # 'mCHP': 'chp_power_used'
     }
     electricity_generation_used = pd.DataFrame(
         {i: most_preferred_solution_results[v] if v in most_preferred_solution_results.keys()
@@ -133,8 +117,6 @@ if __name__ == '__main__':
     electricity_generation_used.index = electricity_generation_used.index.strftime('%Y-%m-%d %H:%M:%S')
 
     electricity_sold_list = {
-        # 'p_sell': 'power_sell_ext_grid',
-        # 'mCHP': 'chp_power_sell',
         'EV': 'ev_power_export',
         'PV': 'pv_power_export',
         'BESS': 'storage_power_export'
@@ -159,9 +141,7 @@ if __name__ == '__main__':
 
     heating_generation_used_list = {
         'h_import': 'heating_power_imported',
-        # 'mCHP': 'chp_heat_used',
         'HP': 'heat_pump_heat_used',
-        # 'HP_ng': 'heat_pump_space_heating_from_natural_gas',
         'ST': 'st_heating_power_domestic_use',
         'HESS': 'thermal_storage_domestic_power_used'
     }
@@ -173,8 +153,6 @@ if __name__ == '__main__':
 
 
     heat_sold_list = {
-        # 'h_sell': 'heat_sell_ext_grid',
-        # 'mCHP': 'chp_heat_sell',
         'ST': 'st_heating_power_export',
         'HESS': 'thermal_storage_power_export',
         'HP': 'heat_pump_heat_sold'
@@ -195,8 +173,6 @@ if __name__ == '__main__':
     gas_generation.index = gas_generation.index.strftime('%Y-%m-%d %H:%M:%S')
 
     gas_consumption_list = {
-        # 'HP_sh': 'heat_pump_natural_gas_to_space_heating',
-        # 'HP_dhw': 'heat_pump_natural_gas_to_dhw_heating',
         'NGD': 'inflexible_gas_demand'
     }
     gas_consumption = pd.DataFrame(
@@ -206,7 +182,6 @@ if __name__ == '__main__':
     gas_consumption.index = gas_consumption.index.strftime('%Y-%m-%d %H:%M:%S')
 
     soe_list = {
-        # 'FEL': 'e_flex',
         'BESS': 'storage_soe',
         'EV': 'ev_soe',
         'HESS': 'thermal_storage_soe'
@@ -259,7 +234,6 @@ if __name__ == '__main__':
                     left_y_label='Price [€/kWh]', right_y_label='Price [€/m3]')
     # fig.savefig(f'hems_results/Energy price.svg')
 
-    # electricity_generation_used.index =
     fig = aggregate_stacked_bar(
         electricity_generation_used,
         electricity_consumption,
@@ -309,8 +283,6 @@ if __name__ == '__main__':
 
 #     all_BESS = pd.DataFrame({(key, column): moop.unique_pareto_sols[key][column] for key in moop.unique_pareto_sols.keys() for column in ['P_ess_ch', 'P_ess_dch', 'ess_soe']})
 #     all_BESS.to_csv('hems_results/BESS all results.csv')
-    # for i in model_variables.columns:
-    #     my_plot(model_variables, y_lable=i)
 
 
 
