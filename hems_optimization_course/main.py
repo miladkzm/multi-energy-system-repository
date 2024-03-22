@@ -260,20 +260,51 @@ if __name__ == '__main__':
     fig = step_plot(soe[['BESS', 'EV']], title='Energy storage systems SOE', left_y_label='SOE_B [kWh]')
     # fig.savefig(f'hems_results/SOE_profiles.svg')
 
-    # fig = step_plot(soe['FEL'], title='Flexible load SOE', left_y_label='SOE [kWh]')
-#     fig.savefig(f'hems_results/Flexible load SOE.svg')
+    bess = {
+        'storage_charging_power': 'storage_charging_power',
+        'storage_discharging_power': 'storage_discharging_power',
+        'ess_soe': 'storage_soe'
+    }
+    bess = pd.DataFrame(
+        {i: most_preferred_solution_results[v] if v in most_preferred_solution_results.keys()
+         else getattr(model, v).extract_values() for i, v in bess.items()}
+    )
+    bess.index = bess.index.strftime('%Y-%m-%d %H:%M:%S')
 
-    # EV = pd.DataFrame({key: most_preferred_solution_results[key] for key in ['P_ev_ch', 'P_ev_dch', 'ev_soe']})
-    # fig = step_plot(EV[['P_ev_ch', 'P_ev_dch']], EV['ev_soe'], left_y_label='Power [kW]', right_y_label='SOE [kWh]')
-#     fig.savefig(f'hems_results/EV_SOE_profiles.svg')
+    fig = step_plot(bess[['storage_charging_power', 'storage_discharging_power']], bess['ess_soe'],
+                    left_y_label='Power [kW]', right_y_label='SOE [kWh]')
+    # fig.savefig(f'hems_results/BESS_SOE_profiles.svg')
 
-    # BESS = pd.DataFrame({key: most_preferred_solution_results[key] for key in ['P_ess_ch', 'P_ess_dch', 'ess_soe']})
-    # fig = step_plot(BESS[['P_ess_ch', 'P_ess_dch']], BESS['ess_soe'], left_y_label='Power [kW]', right_y_label='SOE [kWh]')
-#     fig.savefig(f'hems_results/BESS_SOE_profiles.svg')
+    ev = {
+        'ev_power_charged': 'ev_power_charged',
+        'ev_power_discharged': 'ev_power_discharged',
+        'ev_soe': 'ev_soe'
+    }
+    ev = pd.DataFrame(
+        {i: most_preferred_solution_results[v] if v in most_preferred_solution_results.keys()
+         else getattr(model, v).extract_values() for i, v in ev.items()}
+    )
+    ev.index = ev.index.strftime('%Y-%m-%d %H:%M:%S')
 
-    # HESS = pd.DataFrame({key: most_preferred_solution_results[key] for key in ['h_tss_ch', 'h_tss_dch', 'tss_soe']})
-    # fig = step_plot(HESS[['h_tss_ch', 'h_tss_dch']], HESS['tss_soe'], left_y_label='Heat [kW]', right_y_label='SOH [kWh]')
-#     fig.savefig(f'hems_results/HESS_SOH_profiles.svg')
+    fig = step_plot(ev[['ev_power_charged', 'ev_power_discharged']], ev['ev_soe'],
+                    left_y_label='Power [kW]', right_y_label='SOE [kWh]')
+
+    # fig.savefig(f'hems_results/EV_SOE_profiles.svg')
+
+    hess = {
+        'thermal_storage_charging_power': 'thermal_storage_charging_power',
+        'thermal_storage_discharging_power': 'thermal_storage_discharging_power',
+        'thermal_storage_soe': 'thermal_storage_soe'
+    }
+    hess = pd.DataFrame(
+        {i: most_preferred_solution_results[v] if v in most_preferred_solution_results.keys()
+        else getattr(model, v).extract_values() for i, v in hess.items()}
+    )
+    hess.index = hess.index.strftime('%Y-%m-%d %H:%M:%S')
+
+    fig = step_plot(hess[['thermal_storage_charging_power', 'thermal_storage_discharging_power']], hess['thermal_storage_soe'],
+                    left_y_label='Power [kW]', right_y_label='SOE [kWh]')
+    # fig.savefig(f'hems_results/HESS_SOH_profiles.svg')
 
     fig = step_plot(power_buy_sell, title='Power bought or sold from/to the external grid', left_y_label='Power [kW]')
 #     fig.savefig(f'hems_results/Power_buy_sell_profiles.svg')
