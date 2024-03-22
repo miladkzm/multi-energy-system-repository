@@ -87,7 +87,7 @@ def step_plot(df: Union[pd.DataFrame, pd.Series] = None, df2: pd.Series = None, 
 
     # Set the y-axis label and legend
     ax.set_ylabel(left_y_label)
-    ax.set_ylim([df.min().min() * 0.95, df.max().max() * 1.05])
+    ax.set_ylim([df.min().min() * 1.05, df.max().max() * 1.05])
     ax.legend(ncol=5,
               bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left")
     ax.grid(True)
@@ -238,34 +238,3 @@ def aggregate_stacked_bar(df: pd.DataFrame, df2: pd.DataFrame = None,
     else:
         fig = stacked_bar(df, df2=df2)
         return fig
-
-
-
-
-
-
-
-#
-# tech_color = {
-#         'HP': '#15B01A',
-#         'ST': '#069AF3',
-#         'HESS': '#00FFFF',
-#         'PV': '#FFFF14',
-#         'EV': '#13EAC9',
-#         'mCHP': '#E6DAA6',
-#         'TSEL': '#A9561E',
-#         'BESS': '#7E1E9C',
-#         'HHD': '#E50000',
-#         'WHD': '#030764',
-#         'NFEL': '#FA8072',
-#         'NGD': '#C875C4',
-#         'p_buy': '#0000FF',
-#         'p_sell': '#0000FF',
-#         'h_buy': '#F97306',
-#         'h_sell': '#F97306',
-#         'g_buy': '#C0C0C0'
-#     }
-#
-# fig,ax = plt.subplots()
-#
-# ax.bar(list(tech_color.keys()), 2, color = list(tech_color.values()))

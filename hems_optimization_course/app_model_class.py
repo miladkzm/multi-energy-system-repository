@@ -2,8 +2,6 @@ import inspect
 import sys
 import typing
 from pyomo.environ import *
-from pyomo.util.infeasible import log_infeasible_constraints
-import logging
 from pyaugmecon import PyAugmecon
 from data_interface import HouseholdData
 
@@ -613,14 +611,6 @@ class HouseThermalSystem(AppModel):
                 self.model.timesteps - self.model.timesteps_heating_system_active
         )
 
-        # self.model.T_hhs_cooling_active = Set(
-        #     ordered=True,
-        #     initialize=self.household_data.ambient_temperature[self.household_data.ambient_temperature > 28].index
-        # )
-        # self.model.T_hhs_cooling_not_active = (
-        #         self.model.timesteps - self.model.T_hhs_cooling_active
-        # )
-
         # Variables:
         self.model.house_temperature = Var(
             self.model.timesteps, within=NonNegativeReals, initialize=0
@@ -631,14 +621,6 @@ class HouseThermalSystem(AppModel):
         self.model.house_heating_binary = Var(
             self.model.timesteps, within=Binary, initialize=0
         )
-
-        #
-        # self.model.house_thermal_system_cooling = Var(
-        #     self.model.timesteps, within=NonPositiveReals, initialize=0
-        # )
-        # self.model.house_cooling_binary = Var(
-        #     self.model.timesteps, within=Binary, initialize=0
-        # )
 
         # Constraints:
         def house_temp_change_rule(model, t):
@@ -653,7 +635,6 @@ class HouseThermalSystem(AppModel):
                             / (model.house_thermal_system_resistance * model.house_thermal_system_capacitance)
                             + (
                                     -1.0 * model.house_thermal_system_heating[model.timesteps.prev(t)]
-                                # + model.house_thermal_system_cooling[model.timesteps.prev(t)]
                             ) / model.house_thermal_system_capacitance
                     ) * model.delta_t
             )
@@ -667,8 +648,8 @@ class HouseThermalSystem(AppModel):
             return (
                     model.house_temperature[model.timesteps.first()]
                     ==
-                    model.house_thermal_system_ini_temp
-                # model.house_temperature[model.timesteps.last()]
+                    # model.house_thermal_system_ini_temp
+                model.house_temperature[model.timesteps.last()]
             )
 
         self.model.house_ini_change = Constraint(rule=house_temp_change_ini_rule)
@@ -713,43 +694,10 @@ class HouseThermalSystem(AppModel):
         self.model.house_max_temp_eq = Constraint(
             self.model.timesteps, rule=house_max_temp_rule)
 
-        """
-        # Cooling constraints:
-        def house_cooling_final_value_rule(model):
-            return model.house_thermal_system_cooling[model.timesteps.last()] == 0
-
-        self.model.house_cooling_final_value_eq = Constraint(rule=house_cooling_final_value_rule)
-
-        def house_thermal_system_cooling_not_active_rule(model, t):
-            return model.house_cooling_binary[t] == 0
-
-        self.model.house_thermal_system_cooling_not_active_eq = Constraint(
-            self.model.T_hhs_cooling_not_active, rule=house_thermal_system_cooling_not_active_rule)
-
-        def house_thermal_system_cooling_max_rule(model, t):
-            return model.house_thermal_system_cooling[t] >= - 2 * model.house_cooling_binary[t]
-
-        self.model.house_thermal_system_cooling_max_eq = Constraint(
-            self.model.timesteps, rule=house_thermal_system_cooling_max_rule)
-        
-        
-        def house_heating_system_heating_cooling_rule(model, t):
-            return model.house_cooling_binary[t] + model.house_heating_binary[t] <= 1
-
-        self.model.house_heating_system_heating_cooling_eq = Constraint(
-            self.model.timesteps, rule=house_heating_system_heating_cooling_rule)    
-        
-        
-        """
 
         self.house_model.domestic_heating_power_balance_element_list.append(
             self.model.house_thermal_system_heating
         )
-
-        # self.house_model.domestic_cooling_power_balance_element_list.append(
-        #     self.model.house_thermal_system_cooling
-        # )
-
 
 class HeatPump(AppModel):
     app_type = "heat_pump"
@@ -787,204 +735,6 @@ class HeatPump(AppModel):
         self.house_model.domestic_electric_power_balance_element_list.append(self.model.heat_pump_power_to_heating)
         self.house_model.domestic_heating_power_balance_element_list.append(self.model.heat_pump_heat_used)
         self.house_model.heating_export_power_balance_element_list.append(self.model.heat_pump_heat_sold)
-
-
-class HybridHeatPump(AppModel):
-    app_type = "hybrid_heat_pump"
-
-    def __init__(self, household_data: HouseholdData, house_model: HouseModel):
-        super().__init__(household_data, house_model)
-
-        heat_pump_dhw_cop = (
-                8.74 - 0.190 * (55 - self.household_data.ambient_temperature)
-                + 0.00126 * (55 - self.household_data.ambient_temperature) ** 2
-        )
-
-        heat_pump_sh_cop = (
-                8.74 - 0.190 * (40 - self.household_data.ambient_temperature)
-                + 0.00126 * (40 - self.household_data.ambient_temperature) ** 2
-        )
-
-        self.model.heat_pump_dhw_cop = Param(
-            self.model.timesteps, within=NonNegativeReals, initialize=heat_pump_dhw_cop
-        )
-        self.model.heat_pump_sh_cop = Param(
-            self.model.timesteps, within=NonNegativeReals, initialize=heat_pump_sh_cop
-        )
-        self.model.heat_pump_max_power = Param(
-            within=NonNegativeReals, initialize=self.household_data.heat_pump['max_power']
-        )
-        # Variables:
-        # ---------------------------- Electric Part ------------------------------------------------
-        self.model.heat_pump_power_to_space_heating = Var(
-            self.model.timesteps, within=NonPositiveReals, initialize=0
-        )
-
-        self.model.heat_pump_power_to_dhw_heating = Var(
-            self.model.timesteps, within=NonPositiveReals, initialize=0
-        )
-
-        self.model.heat_pump_space_heating_from_electricity = Var(
-            self.model.timesteps, within=NonNegativeReals, initialize=0
-        )
-        self.model.heat_pump_dhw_heating_from_electricity = Var(
-            self.model.timesteps, within=NonNegativeReals, initialize=0
-        )
-
-        self.model.heat_pump_space_heating_binary_electric_part = Var(
-            self.model.timesteps, within=Binary, initialize=0
-        )
-
-        self.model.heat_pump_dhw_heating_binary_electric_part = Var(
-            self.model.timesteps, within=Binary, initialize=0
-        )
-
-        # ------------------------------ Natural Gas Boiler Part -------------------------------------------
-        self.model.heat_pump_natural_gas_to_space_heating = Var(
-            self.model.timesteps, within=NonPositiveReals, initialize=0
-        )
-
-        self.model.heat_pump_natural_gas_to_dhw_heating = Var(
-            self.model.timesteps, within=NonPositiveReals, initialize=0
-        )
-
-        self.model.heat_pump_space_heating_from_natural_gas = Var(
-            self.model.timesteps, within=NonNegativeReals, initialize=0
-        )
-        self.model.heat_pump_dhw_heating_from_natural_gas = Var(
-            self.model.timesteps, within=NonNegativeReals, initialize=0
-        )
-
-        # ------------------------------ Overall Heating and Power --------------------------------
-        self.model.heat_pump_space_heating_power = Var(
-            self.model.timesteps, within=NonNegativeReals, initialize=0
-        )
-        self.model.heat_pump_dhw_heating_power = Var(
-            self.model.timesteps, within=NonNegativeReals, initialize=0
-        )
-
-        # Constraints:
-        # --------------------------------- SH --------------------------------------
-        def heat_pump_power_to_space_heating_rule(model, t):
-            return (
-                    model.heat_pump_space_heating_from_electricity[t] ==
-                    -1.0 * model.heat_pump_sh_cop[t] * model.heat_pump_power_to_space_heating[t]
-            )
-
-        self.model.heat_pump_power_to_space_heating_eq = Constraint(
-            self.model.timesteps, rule=heat_pump_power_to_space_heating_rule
-        )
-
-        def heat_pump_natural_gas_to_space_heating_rule(model, t):
-            return (
-                    model.heat_pump_space_heating_from_natural_gas[t] ==
-                    -0.94 * self.natural_gas_lower_heating_value * self.model.delta_t
-                    * model.heat_pump_natural_gas_to_space_heating[t]
-            )
-
-        self.model.heat_pump_natural_gas_to_space_heating_eq = Constraint(
-            self.model.timesteps, rule=heat_pump_natural_gas_to_space_heating_rule
-        )
-
-        def heat_pump_space_heating_power_rule(model, t):
-            return (
-                    model.heat_pump_space_heating_power[t] == model.heat_pump_space_heating_from_electricity[t]
-                    + model.heat_pump_space_heating_from_natural_gas[t]
-            )
-
-        self.model.heat_pump_space_heating_power_eq = Constraint(
-            self.model.timesteps, rule=heat_pump_space_heating_power_rule
-        )
-
-        # -------------------------------- DHW -------------------------------------
-        def heat_pump_power_to_dhw_heating_rule(model, t):
-            return (
-                    model.heat_pump_dhw_heating_from_electricity[t] ==
-                    -1.0 * model.heat_pump_dhw_cop[t] * model.heat_pump_power_to_dhw_heating[t]
-            )
-
-        self.model.heat_pump_power_to_dhw_heating_eq = Constraint(
-            self.model.timesteps, rule=heat_pump_power_to_dhw_heating_rule
-        )
-
-        def heat_pump_natural_gas_to_dhw_heating_rule(model, t):
-            return (
-                    model.heat_pump_dhw_heating_from_natural_gas[t] ==
-                    -0.9 * self.natural_gas_lower_heating_value * self.model.delta_t
-                    * model.heat_pump_natural_gas_to_dhw_heating[t]
-            )
-
-        self.model.heat_pump_natural_gas_to_dhw_heating_eq = Constraint(
-            self.model.timesteps, rule=heat_pump_natural_gas_to_dhw_heating_rule
-        )
-
-        def heat_pump_dhw_heating_power_rule(model, t):
-            return (
-                    model.heat_pump_dhw_heating_power[t] == model.heat_pump_dhw_heating_from_electricity[t]
-                    + model.heat_pump_dhw_heating_from_natural_gas[t]
-            )
-
-        self.model.heat_pump_dhw_heating_power_eq = Constraint(
-            self.model.timesteps, rule=heat_pump_dhw_heating_power_rule
-        )
-
-        # ----------------------------------- Operational and Control Equations ----------------------------------
-        def heat_pump_power_to_sh_max_limit_rule(model, t):
-            return (
-                    model.heat_pump_power_to_space_heating[t] >=
-                    -1 * model.heat_pump_space_heating_binary_electric_part[t] * model.heat_pump_max_power
-            )
-
-        self.model.heat_pump_power_to_sh_max_limit_eq = Constraint(
-            self.model.timesteps, rule=heat_pump_power_to_sh_max_limit_rule
-        )
-
-        def heat_pump_power_to_dhw_max_limit_rule(model, t):
-            return (
-                    model.heat_pump_power_to_dhw_heating[t] >=
-                    -1 * model.heat_pump_dhw_heating_binary_electric_part[t] * model.heat_pump_max_power
-            )
-
-        self.model.heat_pump_power_to_dhw_max_limit_eq = Constraint(
-            self.model.timesteps, rule=heat_pump_power_to_dhw_max_limit_rule
-        )
-
-        def heat_pump_electric_part_non_simultaneous_operation_rule(model, t):
-            return (
-                    model.heat_pump_dhw_heating_binary_electric_part[t]
-                    + model.heat_pump_space_heating_binary_electric_part[t] <= 1
-            )
-
-        self.model.heat_pump_electric_part_non_simultaneous_operation_eq = Constraint(
-            self.model.timesteps, rule=heat_pump_electric_part_non_simultaneous_operation_rule
-        )
-
-        def heat_pump_overall_maximum_heat_limit_rule(model, t):
-            return (
-                    model.heat_pump_dhw_heating_power[t] + model.heat_pump_space_heating_power[t] <= 14.0
-            )
-
-        self.model.heat_pump_overall_maximum_heat_limit_eq = Constraint(
-            self.model.timesteps, rule=heat_pump_overall_maximum_heat_limit_rule
-        )
-
-        self.house_model.domestic_electric_power_balance_element_list.extend([
-            self.model.heat_pump_power_to_space_heating,
-            self.model.heat_pump_power_to_dhw_heating
-        ])
-
-        self.house_model.domestic_heating_power_balance_element_list.extend([
-            self.model.heat_pump_space_heating_power
-        ])
-
-        self.house_model.heating_export_power_balance_element_list.append(
-            self.model.heat_pump_dhw_heating_power
-        )
-
-        self.house_model.domestic_natural_gas_balance_element_list.extend([
-            self.model.heat_pump_natural_gas_to_space_heating,
-            self.model.heat_pump_natural_gas_to_dhw_heating
-        ])
 
 
 class TimeShiftableElectricLoad(AppModel):
@@ -1063,7 +813,6 @@ class TimeShiftableElectricLoad(AppModel):
         self.model.ts_phase_activation = Constraint(
             self.model.tsl_phases, rule=ts_phase_activation_rule)
 
-        # Todo This part is unnecessary
         # No interruption in the operation, one phase after another is on
         def ts_phase_sequence_rule(model, t, ph):
             return (
