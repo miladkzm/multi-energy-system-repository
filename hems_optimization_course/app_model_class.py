@@ -322,14 +322,9 @@ class SolarThermalSystem(AppModel):
             self.model.timesteps, within=NonNegativeReals, initialize=0
         )
 
-        def st_balance_rule(model, t):
-            return (
-                    model.st_heating_power_domestic_use[t]
-                    + model.st_heating_power_export[t]
-                    == model.st_heating_power_generation[t]
-            )
+        # ToDo ---------------- Include the equations yourself -----------------------
 
-        self.model.st_balance_constraint = Constraint(self.model.timesteps, rule=st_balance_rule)
+        # ----------------------------------------
 
         self.house_model.domestic_heating_power_balance_element_list.append(
             self.model.st_heating_power_domestic_use)
@@ -713,21 +708,9 @@ class HeatPump(AppModel):
         self.model.heat_pump_heat_used = Var(self.model.timesteps, within=NonNegativeReals, initialize=0)
         self.model.heat_pump_heat_sold = Var(self.model.timesteps, within=NonNegativeReals, initialize=0)
 
-        # Constraints:
-        def heat_pump_heat_rule(model, t):
-            return model.heat_pump_heat[t] == model.heat_pump_power_to_heating[t] * -1 * model.heat_pump_cop
+        # ToDO --------------------- Include the constraints yourself -------------------------------:
 
-        self.model.heat_pump_heat_eq = Constraint(self.model.timesteps, rule=heat_pump_heat_rule)
-
-        def heat_pump_heat_use_sell_rule(model, t):
-            return model.heat_pump_heat[t] == model.heat_pump_heat_used[t] + model.heat_pump_heat_sold[t]
-
-        self.model.heat_pump_heat_use_sell_eq = Constraint(self.model.timesteps, rule=heat_pump_heat_use_sell_rule)
-
-        def heat_pump_max_power_rule(model, t):
-            return model.heat_pump_power_to_heating[t] >= -1 * model.heat_pump_max_power
-
-        self.model.heat_pump_max_power_eq = Constraint(self.model.timesteps, rule=heat_pump_max_power_rule)
+        # -----------------------------------------------------------------------------------
 
         self.house_model.domestic_electric_power_balance_element_list.append(self.model.heat_pump_power_to_heating)
         self.house_model.domestic_heating_power_balance_element_list.append(self.model.heat_pump_heat_used)
