@@ -59,7 +59,7 @@ if __name__ == '__main__':
         preferred_solution_indices = np.flip(np.argsort(C_i_plus))
         most_preferred_solution_index = preferred_solution_indices[0]
         most_preferred_solution_key = tuple(pareto_sol[most_preferred_solution_index])
-        # extract the results for the most preferred solution:
+        # extract the hems_results for the most preferred solution:
         most_preferred_solution_results = moop.unique_pareto_sols[most_preferred_solution_key]
 
         fig, axs = plt.subplots(1, figsize=[4, 1.5])
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         # axs.set_title('Pareto Optimal Solutions')
         fig.set_tight_layout(True)
         fig.show()
-        # fig.savefig(f'hems_results/Pareto.pdf')
+        fig.savefig(f'hems_results/Pareto.pdf')
     else:
         app_model.solve_model()
         model = app_model.house_model_defined.model
@@ -228,11 +228,11 @@ if __name__ == '__main__':
     fig = step_plot(input_parameters[['Ambient temperature', 'House temperature']],
                     df2=input_parameters['Solar irradiance'],
                     left_y_label='Temperature [°C]', right_y_label='Irradiance [kW/m2]')
-    # fig.savefig(f'hems_results/Irradiance and temperature.svg')
+    fig.savefig(f'hems_results/Irradiance and temperature.pdf')
 
-    fig = step_plot(input_parameters[['Electricity']], df2=input_parameters['Gas'],
+    fig = step_plot(input_parameters[['Electricity', 'Heat']], df2=input_parameters['Gas'],
                     left_y_label='Price [€/kWh]', right_y_label='Price [€/m3]')
-    # fig.savefig(f'hems_results/Energy price.svg')
+    fig.savefig(f'hems_results/Energy price.pdf')
 
     fig = aggregate_stacked_bar(
         electricity_generation_used,
@@ -242,7 +242,7 @@ if __name__ == '__main__':
         title2="Export to external grid",
         y_label="Power [kW]"
     )
-    # fig.savefig(f'hems_results/Electricity_profiles.svg')
+    fig.savefig(f'hems_results/Electricity_domestic_profiles.pdf')
 
     fig = aggregate_stacked_bar(
         heating_generation_used,
@@ -251,14 +251,17 @@ if __name__ == '__main__':
         title1='Domestic heating generation, import and consumption',
         title2="Export to external network",
         y_label="Heat [kW]")
-    # fig.savefig(f'hems_results/Space_heating_profiles.svg')
+    fig.savefig(f'hems_results/Heating_domestic_profiles.pdf')
 
     title = 'Gas domestic consumption and import'
     fig = stacked_bar(gas_generation, gas_consumption, title, y_label='Gas [m3]')
-    # fig.savefig(f'hems_results/Gas_profiles.svg')
+    fig.savefig(f'hems_results/Gas_profiles.pdf')
 
-    fig = step_plot(soe[['BESS', 'EV']], title='Energy storage systems SOE', left_y_label='SOE_B [kWh]')
-    # fig.savefig(f'hems_results/SOE_profiles.svg')
+    fig = step_plot(soe[['BESS', 'EV']], soe['HESS'], title='Energy storage systems SOE',
+                    left_y_label='SOE_B [kWh]',
+                    right_y_label='SOE_H'
+                    )
+    fig.savefig(f'hems_results/SOE_profiles.pdf')
 
     bess = {
         'storage_charging_power': 'storage_charging_power',
@@ -273,7 +276,7 @@ if __name__ == '__main__':
 
     fig = step_plot(bess[['storage_charging_power', 'storage_discharging_power']], bess['ess_soe'],
                     left_y_label='Power [kW]', right_y_label='SOE [kWh]')
-    # fig.savefig(f'hems_results/BESS_SOE_profiles.svg')
+    fig.savefig(f'hems_results/BESS_SOE_profiles.pdf')
 
     ev = {
         'ev_power_charged': 'ev_power_charged',
@@ -289,7 +292,7 @@ if __name__ == '__main__':
     fig = step_plot(ev[['ev_power_charged', 'ev_power_discharged']], ev['ev_soe'],
                     left_y_label='Power [kW]', right_y_label='SOE [kWh]')
 
-    # fig.savefig(f'hems_results/EV_SOE_profiles.svg')
+    fig.savefig(f'hems_results/EV_SOE_profiles.pdf')
 
     hess = {
         'thermal_storage_charging_power': 'thermal_storage_charging_power',
@@ -304,16 +307,16 @@ if __name__ == '__main__':
 
     fig = step_plot(hess[['thermal_storage_charging_power', 'thermal_storage_discharging_power']], hess['thermal_storage_soe'],
                     left_y_label='Power [kW]', right_y_label='SOE [kWh]')
-    # fig.savefig(f'hems_results/HESS_SOH_profiles.svg')
+    fig.savefig(f'hems_results/HESS_SOH_profiles.pdf')
 
     fig = step_plot(power_buy_sell, title='Power bought or sold from/to the external grid', left_y_label='Power [kW]')
-#     fig.savefig(f'hems_results/Power_buy_sell_profiles.svg')
+    fig.savefig(f'hems_results/Power_buy_sell_profiles.pdf')
 
     fig = step_plot(heat_buy_sell, title='Heat bought or sold from/to the external network', left_y_label='Heat [kW]')
-    # fig.savefig(f'hems_results/Heat_buy_sell_profiles.svg')
+    fig.savefig(f'hems_results/Heat_buy_sell_profiles.pdf')
 
 #     all_BESS = pd.DataFrame({(key, column): moop.unique_pareto_sols[key][column] for key in moop.unique_pareto_sols.keys() for column in ['P_ess_ch', 'P_ess_dch', 'ess_soe']})
-#     all_BESS.to_csv('hems_results/BESS all results.csv')
+#     all_BESS.to_csv('hems_results/BESS all hems_results.csv')
 
 
 
